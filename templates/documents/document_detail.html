@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-3">
+        <a href="{% url 'document_list' %}" class="btn btn-sm btn-outline-secondary">&larr; Back to Workspace List</a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="card-title mb-3">{{ document.title }}</h2>
+                    <p class="text-muted">Uploaded by <strong>{{ document.uploaded_by.username }}</strong> on {{ document.uploaded_at|date:"F d, Y h:i A" }}</p>
+                    <hr>
+                    
+                    <h4 class="mt-4">🤖 AI Smart Summary</h4>
+                    <p class="fs-6 text-dark bg-light p-3 rounded" style="border-left: 4px solid #0d6efd; min-height: 80px;">
+                        {{ document.ai_summary|default:"No analysis summary available for this file." }}
+                    </p>
+
+                    <div class="d-flex gap-3 my-4 pt-3">
+                        <a href="{{ document.file.url }}" target="_blank" class="btn btn-primary">Open / View Document File</a>
+                        <a href="{{ document.file.url }}" download class="btn btn-outline-primary">Download Local Backup Copy</a>
+                    </div>
+                </div>
+            </div>
+
+            {% if document.manager_remarks %}
+            <div class="card shadow-sm border-0 mb-4" style="border-left: 5px solid #17a2b8 !important;">
+                <div class="card-body bg-light rounded-end">
+                    <h5 class="text-info fw-bold mb-2">📋 Manager Review Feedback</h5>
+                    <p class="text-dark mb-0 fs-6"><em>"{{ document.manager_remarks }}"</em></p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.is_staff or user.is_superuser %}
+                {% if document.status == 'PENDING' %}
+                <div class="card shadow-sm border-warning mb-4">
+                    <div class="card-header bg-warning text-dark fw-bold">🛡️ Manager Review Desk</div>
+                    <div class="card-body">
+                        <form method="POST" action="/documents/{{ document.pk }}/review/">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Review Remarks / Decision Reasoning:</label>
+                                <textarea name="remarks" class="form-control" rows="3" placeholder="Type decision notes, feedback, or rejection justifications here..."></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" name="action" value="APPROVE" class="btn btn-success fw-bold px-4">✅ Approve Request</button>
+                                <button type="submit" name="action" value="DECLINE" class="btn btn-danger fw-bold px-4">❌ Decline Request</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white fw-bold">Workflow Meta Registry</div>
+                <div class="card-body">
+                    <h6 class="text-muted small uppercase fw-bold mb-1">Current State Node</h6>
+                    <p class="mb-4">
+                        {% if document.status == 'APPROVED' %}
+                            <span class="badge bg-success p-2 w-100 fs-6">Approved</span>
+                        {% elif document.status == 'REJECTED' %}
+                            <span class="badge bg-danger p-2 w-100 fs-6">Rejected</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark p-2 fw-bold w-100 fs-6">Pending Review Pipeline</span>
+                        {% endif %}
+                    </p>
+                    
+                    <h6 class="text-muted small uppercase fw-bold mb-1">AI Module Category Extract</h6>
+                    <p class="mb-4">
+                        <span class="badge bg-light text-primary border border-primary px-3 py-2 fs-6 d-block text-center">{{ document.ai_category|default:"Uncategorized" }}</span>
+                    </p>
+
+                    <h6 class="text-muted small uppercase fw-bold mb-1">AI Computed Priority</h6>
+                    <p class="mb-3">
+                        {% if document.ai_priority|lower == 'high' %}
+                            <span class="badge bg-danger p-2 w-100 fs-6">⚠️ High Priority</span>
+                        {% elif document.ai_priority|lower == 'medium' %}
+                            <span class="badge bg-info text-dark p-2 w-100 fs-6">⚡ Medium Priority</span>
+                        {% else %}
+                            <span class="badge bg-secondary p-2 w-100 fs-6">Low Priority</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
